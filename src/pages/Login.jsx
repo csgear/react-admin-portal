@@ -1,13 +1,17 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
-import { Form, Input, Button, Card, message } from "antd";
+import { Form, Input, Button, Typography, notification } from "antd";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { useNavigate } from "react-router-dom";
+
+const { Title } = Typography;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleLogin = async (values) => {
+  const handleSubmit = async (values) => {
     setLoading(true);
     try {
       const response = await axios.post(
@@ -15,16 +19,13 @@ const Login = () => {
         values
       );
       const { access_token } = response.data;
-
-      // Save the access_token in a cookie
       Cookies.set("auth_token", access_token);
-
-      message.success("Login successful!");
-      // Redirect to the desired page after login if needed
+      navigate("/admin/users");
     } catch (error) {
-      message.error(
-        error.response?.data?.message || "Login failed, please try again."
-      );
+      notification.error({
+        message: "Login Failed",
+        description: "Invalid email or password.",
+      });
     } finally {
       setLoading(false);
     }
@@ -39,36 +40,33 @@ const Login = () => {
         height: "100vh",
       }}
     >
-      <Card title="Login" style={{ width: 400 }}>
-        <Form
-          name="login_form"
-          initialValues={{ remember: true }}
-          onFinish={handleLogin}
-          layout="vertical"
-        >
+      <div style={{ width: 400 }}>
+        <Title level={2}>Login</Title>
+        <Form layout="vertical" onFinish={handleSubmit}>
           <Form.Item
-            label="Email"
             name="email"
-            rules={[{ required: true, message: "Please input your email!" }]}
+            label="Email"
+            rules={[
+              { required: true, message: "Please input your email!" },
+              { type: "email", message: "Please enter a valid email!" },
+            ]}
           >
             <Input />
           </Form.Item>
-
           <Form.Item
-            label="Password"
             name="password"
+            label="Password"
             rules={[{ required: true, message: "Please input your password!" }]}
           >
             <Input.Password />
           </Form.Item>
-
           <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
+            <Button type="primary" htmlType="submit" loading={loading}>
               Login
             </Button>
           </Form.Item>
         </Form>
-      </Card>
+      </div>
     </div>
   );
 };

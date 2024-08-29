@@ -1,6 +1,7 @@
 import React from "react";
 import { Layout, Menu, Button } from "antd";
 import { UserOutlined } from "@ant-design/icons";
+import Cookies from "js-cookie";
 import { useNavigate, Outlet } from "react-router-dom";
 
 const { Header, Sider, Content } = Layout;
@@ -9,7 +10,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    // Add your logout logic here
+    Cookies.remove("auth_token");
     navigate("/login");
   };
 
