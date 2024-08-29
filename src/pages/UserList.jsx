@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Table, Button, Switch, Typography, Space } from "antd";
 import axios from "axios";
 import Cookies from "js-cookie";
+import EditUserModal from "../components/EditUserModal"; // Import the modal component
 
 const { Title } = Typography;
 
@@ -11,9 +12,11 @@ const UserList = () => {
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 5,
     total: 0,
   });
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,13 +34,16 @@ const UserList = () => {
             headers: {
               Authorization: `Bearer ${authToken}`,
             },
+            params: {
+              current: pagination.current,
+              per_page: pagination.pageSize,
+            },
           }
         );
-        setData(response.data.data);
+        setData(response.data.data); // Adjust according to your API response structure
         setPagination({
           ...pagination,
-          current: response.data.meta.pagination.current_page,
-          total: response.data.meta.pagination.total_pages,
+          total: response.data.meta.pagination.total,
         });
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -47,11 +53,16 @@ const UserList = () => {
     };
 
     fetchData();
-  }, [pagination.current]);
+  }, [pagination.current, pagination.pageSize]);
 
-  const handleEdit = (id) => {
-    // Implement the edit logic here
-    console.log("Edit user with id:", id);
+  const handleEdit = (user) => {
+    setSelectedUser(user);
+    setModalVisible(true);
+  };
+
+  const handleSave = () => {
+    // Re-fetch data or update local state
+    setModalVisible(false);
   };
 
   const handleToggle = async (id, isLocked) => {
@@ -63,7 +74,6 @@ const UserList = () => {
     }
 
     try {
-      // Implement the toggle logic here
       await axios.post(
         `https://api.shop.eduwork.cn/api/admin/users/${id}/toggle`,
         { is_locked: isLocked },
@@ -73,7 +83,6 @@ const UserList = () => {
           },
         }
       );
-      // Optionally, refetch data to update the table
       await fetchData();
     } catch (error) {
       console.error("Error toggling user lock status:", error);
@@ -104,7 +113,7 @@ const UserList = () => {
       key: "email",
     },
     {
-      title: "Disabled",
+      title: "Is Disabled",
       dataIndex: "is_locked",
       key: "is_locked",
       render: (isLocked, record) => (
@@ -124,7 +133,7 @@ const UserList = () => {
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button type="link" onClick={() => handleEdit(record.id)}>
+          <Button type="link" onClick={() => handleEdit(record)}>
             Edit
           </Button>
         </Space>
@@ -133,11 +142,11 @@ const UserList = () => {
   ];
 
   const handleTableChange = (pagination) => {
-    // setPagination({
-    //   current: pagination.current,
-    //   pageSize: pagination.pageSize,
-    //   total: pagination.total, // Update total for accurate pagination
-    // });
+    setPagination({
+      current: pagination.current,
+      pageSize: pagination.pageSize,
+      total: pagination.total, // Update total for accurate pagination
+    });
   };
 
   return (
@@ -154,11 +163,19 @@ const UserList = () => {
         pagination={{
           current: pagination.current,
           pageSize: pagination.pageSize,
-          total: data.total, // Adjust according to your API response
-          showSizeChanger: false, // Hide page size changer if not needed
+          total: pagination.total,
+          showSizeChanger: false,
         }}
         onChange={handleTableChange}
       />
+      {selectedUser && (
+        <EditUserModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          user={selectedUser}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 };
